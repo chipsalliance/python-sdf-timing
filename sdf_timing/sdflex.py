@@ -53,7 +53,10 @@ reserved = {
     'INTERCONNECT': 'INTERCONNECT',
     'PORT': 'PORT',
     'SETUPHOLD': 'SETUPHOLD',
+    'SKEW': 'SKEW',
+    'BIDIRECTSKEW': 'BIDIRECTSKEW',
     'WIDTH': 'WIDTH',
+    'PERIOD': 'PERIOD',
     'COND': 'COND',
     'DEVICE': 'DEVICE',
 }
