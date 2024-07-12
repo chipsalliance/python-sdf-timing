@@ -94,13 +94,13 @@ def p_qfloat_header_entry(p):
 
 
 def p_sdf_voltage(p):
-    '''voltage : LPAR VOLTAGE real_triple RPAR'''
+    '''voltage : LPAR VOLTAGE float_or_triple RPAR'''
     header['voltage'] = p[3]
     p[0] = header
 
 
 def p_sdf_temperature(p):
-    '''temperature : LPAR TEMPERATURE real_triple RPAR'''
+    '''temperature : LPAR TEMPERATURE float_or_triple RPAR'''
     header['temperature'] = p[3]
     p[0] = header
 
@@ -224,13 +224,16 @@ def p_t_check(p):
                | recovery_check
                | hold_check
                | setup_check
+               | skew_check
+               | bidirectskew_check
                | width_check
+               | period_check
                | setuphold_check'''
     p[0] = p[1]
 
 
 def p_removal_check(p):
-    '''removal_check : LPAR REMOVAL timing_port timing_port real_triple RPAR'''
+    '''removal_check : LPAR REMOVAL timing_port timing_port rvalue RPAR'''
 
     paths = dict()
     paths['nominal'] = p[5]
@@ -240,7 +243,7 @@ def p_removal_check(p):
 
 
 def p_recovery_check(p):
-    '''recovery_check : LPAR RECOVERY timing_port timing_port real_triple \
+    '''recovery_check : LPAR RECOVERY timing_port timing_port rvalue \
     RPAR'''
 
     paths = dict()
@@ -251,7 +254,7 @@ def p_recovery_check(p):
 
 
 def p_hold_check(p):
-    '''hold_check : LPAR HOLD timing_port timing_port real_triple RPAR'''
+    '''hold_check : LPAR HOLD timing_port timing_port rvalue RPAR'''
 
     paths = dict()
     paths['nominal'] = p[5]
@@ -261,7 +264,7 @@ def p_hold_check(p):
 
 
 def p_setup_check(p):
-    '''setup_check : LPAR SETUP timing_port timing_port real_triple RPAR'''
+    '''setup_check : LPAR SETUP timing_port timing_port rvalue RPAR'''
 
     paths = dict()
     paths['nominal'] = p[5]
@@ -270,8 +273,28 @@ def p_setup_check(p):
     p[0] = tmp_delay_list
 
 
+def p_skew_check(p):
+    '''skew_check : LPAR SKEW timing_port rvalue RPAR'''
+
+    paths = dict()
+    paths['nominal'] = p[4]
+    tcheck = utils.add_tcheck('skew', p[3], p[3], paths)
+    tmp_delay_list.append(tcheck)
+    p[0] = tmp_delay_list
+
+
+def p_bidirectskew_check(p):
+    '''bidirectskew_check : LPAR BIDIRECTSKEW timing_port timing_port rvalue RPAR'''
+
+    paths = dict()
+    paths['nominal'] = p[5]
+    tcheck = utils.add_tcheck('bidirectskew', p[3], p[4], paths)
+    tmp_delay_list.append(tcheck)
+    p[0] = tmp_delay_list
+
+
 def p_width_check(p):
-    '''width_check : LPAR WIDTH timing_port real_triple RPAR'''
+    '''width_check : LPAR WIDTH timing_port rvalue RPAR'''
 
     paths = dict()
     paths['nominal'] = p[4]
@@ -280,9 +303,19 @@ def p_width_check(p):
     p[0] = tmp_delay_list
 
 
+def p_period_check(p):
+    '''period_check : LPAR PERIOD timing_port rvalue RPAR'''
+
+    paths = dict()
+    paths['nominal'] = p[4]
+    tcheck = utils.add_tcheck('period', p[3], p[3], paths)
+    tmp_delay_list.append(tcheck)
+    p[0] = tmp_delay_list
+
+
 def p_setuphold_check(p):
-    '''setuphold_check : LPAR SETUPHOLD timing_port timing_port real_triple \
-    real_triple RPAR'''
+    '''setuphold_check : LPAR SETUPHOLD timing_port timing_port rvalue \
+    rvalue RPAR'''
 
     paths = dict()
     paths['setup'] = p[5]
@@ -307,8 +340,8 @@ def p_constraints_list(p):
 
 
 def p_path_constraint(p):
-    '''path_constraint : LPAR PATHCONSTRAINT port_spec port_spec real_triple \
-    real_triple RPAR'''
+    '''path_constraint : LPAR PATHCONSTRAINT port_spec port_spec rvalue \
+    rvalue RPAR'''
 
     paths = dict()
     paths['rise'] = p[5]
@@ -401,9 +434,9 @@ def p_del(p):
 
 
 def p_delval_list(p):
-    '''delval_list : real_triple
-                   | real_triple real_triple
-                   | real_triple real_triple real_triple'''
+    '''delval_list : rvalue
+                   | rvalue rvalue
+                   | rvalue rvalue rvalue'''
 
     # SDF can express separate timings from transitions between different
     # logic state sets. For now we do not have use for eg. different 0->1
@@ -559,6 +592,19 @@ def p_real_triple(p):
 
     p[0] = delays_triple
 
+def p_float_or_triple(p):
+    '''float_or_triple : FLOAT
+                       | real_triple'''
+    p[0] = p[1]
+
+def p_rvalue(p):
+    '''rvalue : LPAR FLOAT RPAR
+              | real_triple
+              | LPAR RPAR '''
+    if (len(p) == 2):
+        p[0] = p[1]
+    elif (len(p) == 4):
+        p[0] = p[2]
 
 def p_equation(p):
     '''equation : operator
